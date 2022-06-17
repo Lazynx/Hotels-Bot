@@ -11,7 +11,7 @@ if __name__ == '__main__':
         elif message.text == 'Привет':
             mess = 'Привет {} {}'.format(message.from_user.first_name, message.from_user.last_name)
             bot.send_message(message.from_user.id, mess)
-        if message.text == '/help':
+        elif message.text == '/help':
             bot.send_message(message.from_user.id, 'У меня есть команда /hello-world')
         else:
             bot.send_message(message.from_user.id, 'Я тебя не понимаю. Напиши /help.')
