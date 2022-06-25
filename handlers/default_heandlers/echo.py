@@ -8,3 +8,4 @@ from loader import bot
 def bot_echo(message: Message):
     bot.reply_to(message, "Эхо без состояния или фильтра.\nСообщение:"
                           f"{message.text}")
+
