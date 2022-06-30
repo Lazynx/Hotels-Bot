@@ -2,10 +2,11 @@ from telebot.handler_backends import State, StatesGroup
 
 
 class UserInfoState(StatesGroup):
+    """ Класс состояний пользователя. """
     city_name = State()
     city_id = State()
     hotels_amt = State()
-    uploading_photos = State()
+    picture_mode = State()
     photos_amt = State()
     check_in = State()
     check_out = State()
