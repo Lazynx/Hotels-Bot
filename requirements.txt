@@ -1,9 +1,6 @@
 python-dotenv==0.20.0
-pip==22.1.2
-certifi==2022.6.15
-requests==2.28.0
-idna==3.3
-urllib3==1.26.9
-setuptools==62.6.0
+requests==2.28.1
 loguru==0.6.0
 python-telegram-bot-calendar==1.0.5
+peewee==3.15.0
+pyTelegramBotAPI==4.6.0
