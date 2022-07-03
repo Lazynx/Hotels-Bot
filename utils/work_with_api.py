@@ -9,30 +9,40 @@ from loguru import logger
 from json import JSONDecodeError
 from requests import Response
 from telebot.types import Message
+from typing import Dict
 
 
-def get_request(url: str, headers: str, params: {}) -> Response:
-    """ Функция для выполнения запроса. """
+def get_request(url: str, headers: str, params: Dict) -> Response:
+    """ Функция "get_request" выполняет запрос. """
     return requests.get(url=url, headers=headers, params=params, timeout=30)
 
 
 def get_hotels_list(message: Message) -> list:
-    """ Функция для получения списков отелей по ID города. """
+    """ Функция "get_hotels_list" создает список отелей по ID города. """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         url = "https://hotels4.p.rapidapi.com/properties/list"
-
-        querystring = {"destinationId": data['city_id'], "pageNumber": "1", "pageSize": "25",
-                       "checkIn": data['check_in'],
-                       "checkOut": data['check_out'], "adults1": "1", "sortOrder": "PRICE", "locale": "ru_RU",
-                       "currency": "RUB"}
-
-        req = get_request(url=url, headers=c.headers, params=querystring)
-        parse_list = json.loads(req.text)
-        return parse_list
+        min_price = ''
+        max_price = ''
+        if data['commands'] == 'lowprice':
+            sort_method = "PRICE"
+        elif data['commands'] == 'highprice':
+            sort_method = "PRICE_HIGHEST_FIRST"
+        elif data['commands'] == 'bestdeal':
+            sort_method = "DISTANCE_FROM_LANDMARK"
+            min_price = data['min_price']
+            max_price = data['max_price']
+    landmarkIds = 'Центр города'
+    querystring = {"destinationId": data['city_id'], "pageNumber": "1", "pageSize": "25",
+                   "checkIn": data['check_in'], "checkOut": data['check_out'], "adults1": "1", "priceMin": min_price,
+                   "priceMax": max_price, "sortOrder": sort_method, "locale": "ru_RU", "currency": "RUB",
+                   "landmarkIds": landmarkIds}
+    req = get_request(url=url, headers=c.headers, params=querystring)
+    parse_list = json.loads(req.text)
+    return parse_list
 
 
 def process_hotels_list(parse_list: list, message: Message) -> list:
-    """ Функция для формирования данных об отеле. """
+    """ Функция "process_hotels_list" формирует данные об отеле. """
     hotels = []
     hotel_id, name, address, center, night_price, full_price = '', '', '', 'нет данных', '', ''
     hot_cnt = 0
@@ -40,28 +50,36 @@ def process_hotels_list(parse_list: list, message: Message) -> list:
     for hotel in parse_list["data"]["body"]["searchResults"]["results"]:
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             if hot_cnt < data['hotels_amt']:
-                hot_cnt += 1
                 hotel_id = hotel["id"]
                 name = hotel["name"]
                 address = f'{hotel["address"]["countryName"]}, {hotel["address"]["locality"]}, ' \
                           f'{hotel["address"].get("postalCode", "")}, {hotel["address"].get("streetAddress", "")}'
                 if len(hotel['landmarks']) > 0:
                     if hotel['landmarks'][0]['label'] == 'Центр города':
-                        center = hotel['landmarks'][0]['distance']
+                        if data['commands'] == 'bestdeal':
+                            hot_dist = (hotel['landmarks'][0]['distance']).replace(',', '.')
+                            if float(hot_dist.replace(' км', '')) <= data['distance']:
+                                center = hotel['landmarks'][0]['distance']
+                            else:
+                                continue
+                        else:
+                            center = hotel['landmarks'][0]['distance']
                 night_price = str(round(hotel['ratePlan']['price']['exactCurrent']))
                 period = data['check_out'] - data['check_in']
                 full_price = str(round(int(night_price) * period.days))
                 star_rating = str(hotel['starRating'])
                 coordinates = f"{hotel['coordinate'].get('lat', 0)},{hotel['coordinate'].get('lon', 0)}"
+                user_star_rating = hotel.get('guestReviews', {}).get('rating', 'нет данных').replace(',', '.')
                 hotels.append((hotel_id, name, address, center, night_price, full_price, star_rating,
-                               coordinates, period))
+                               user_star_rating, coordinates, period))
+                hot_cnt += 1
             else:
                 break
     return hotels
 
 
 def request_photo(id_hotel: str, message: Message) -> list:
-    """ Функция для запроса к API и получения данных о фотографиях. """
+    """ Функция "request_photo" делает запрос к API и получает данные о фотографиях. """
     url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
     querystring = {"id": id_hotel}
     photos = []
@@ -77,15 +95,15 @@ def request_photo(id_hotel: str, message: Message) -> list:
                     photos.append((id_hotel, url))
                 else:
                     break
-            return photos
+        return photos
     except (JSONDecodeError, TypeError) as exc:
         logger.exception(exc)
 
 
 def check_foto(photo: str) -> bool:
-    """ Функция для проверки URL фото. """
+    """ Функция "check_foto" проверяет URL фото. """
     try:
-        checking_foto = requests.get(url=photo, timeout=30)
+        checking_foto = requests.get(url=photo, timeout=20)
         if checking_foto.status_code == 200:
             return True
     except requests.exceptions.RequestException as exc:
