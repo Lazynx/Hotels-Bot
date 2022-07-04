@@ -1,5 +1,4 @@
 from peewee import *
-from loguru import logger
 import datetime
 
 db = SqliteDatabase('history.db')
@@ -31,10 +30,10 @@ def add_req(user_id: int, user_date: datetime, user_command: str, user_city_name
     """
     Функция "add_req" записывает информацию в поля таблицы запросов пользователя.
     :param user_id: ID пользователя
-    :param user_date: дата команды
-    :param user_command: команда пользователя
-    :param user_city_name: название города
-    :return: uid запроса пользователя
+    :param user_date: Дата команды
+    :param user_command: Команда пользователя
+    :param user_city_name: Название города
+    :return: UID запроса пользователя
     """
     with db:
         uid = UserRequest.create(telegram_id=user_id, date=user_date, command=user_command, city_name=user_city_name)
@@ -44,9 +43,9 @@ def add_req(user_id: int, user_date: datetime, user_command: str, user_city_name
 def add_hotels(req_uid: int, hotel_name: str, hotel_url: str) -> None:
     """
     Функция "add_hotels" записывает информацию в поля таблицы отелей.
-    :param req_uid: uid запроса
-    :param hotel_name: название отеля
-    :param hotel_url: ссылка на отель
+    :param req_uid: UID запроса пользователя
+    :param hotel_name: Название отеля
+    :param hotel_url: Ссылка отеля
     """
     with db:
         Hotels.create(request_uid=req_uid, hotel_name=hotel_name, hotel_url=hotel_url)

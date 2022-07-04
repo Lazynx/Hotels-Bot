@@ -13,12 +13,22 @@ from typing import Dict
 
 
 def get_request(url: str, headers: str, params: Dict) -> Response:
-    """ Функция "get_request" выполняет запрос. """
+    """
+    Функция "get_request" выполняет запрос.
+    :param url: ссылка запроса
+    :param headers: Заголовки запроса
+    :param params: Параметры запроса
+    :return: Запрос по указанным параметрам
+    """
     return requests.get(url=url, headers=headers, params=params, timeout=30)
 
 
 def get_hotels_list(message: Message) -> list:
-    """ Функция "get_hotels_list" создает список отелей по ID города. """
+    """
+    Функция "get_hotels_list" создает список отелей по ID города.
+    :param message: Сообщение пользователя
+    :return: Список отелей из API
+    """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         url = "https://hotels4.p.rapidapi.com/properties/list"
         min_price = ''
@@ -42,7 +52,12 @@ def get_hotels_list(message: Message) -> list:
 
 
 def process_hotels_list(parse_list: list, message: Message) -> list:
-    """ Функция "process_hotels_list" формирует данные об отеле. """
+    """
+    Функция "process_hotels_list" формирует данные об отеле.
+    :param parse_list: Список отелей
+    :param message: Сообщение пользователя
+    :return: Сформированный список отелей
+    """
     hotels = []
     hotel_id, name, address, center, night_price, full_price = '', '', '', 'нет данных', '', ''
     hot_cnt = 0
@@ -79,7 +94,12 @@ def process_hotels_list(parse_list: list, message: Message) -> list:
 
 
 def request_photo(id_hotel: str, message: Message) -> list:
-    """ Функция "request_photo" делает запрос к API и получает данные о фотографиях. """
+    """
+    Функция "request_photo" делает запрос к API и получает данные о фотографиях.
+    :param id_hotel: ID отеля
+    :param message: Сообщение пользователя
+    :return: Список фото
+    """
     url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
     querystring = {"id": id_hotel}
     photos = []
@@ -101,7 +121,11 @@ def request_photo(id_hotel: str, message: Message) -> list:
 
 
 def check_foto(photo: str) -> bool:
-    """ Функция "check_foto" проверяет URL фото. """
+    """
+    Функция "check_foto" проверяет URL фото.
+    :param photo: Ссылка на фото
+    :return: Булево значение
+    """
     try:
         checking_foto = requests.get(url=photo, timeout=20)
         if checking_foto.status_code == 200:

@@ -28,6 +28,9 @@ def form_media_group(photos: list, text: str) -> list:
     """
     Функция "form_media_group" нужна для:
     1. Формирования медиа группы.
+    :param photos: Список фото
+    :param text: Текст сообщения
+    :return: Медиа группа
     """
     media = []
     num = 0
@@ -44,6 +47,8 @@ def city_founding(response: Response) -> list:
     """
     Функция "city_founding" нужна для:
     1. Формирования списка городов.
+    :param response: Запрос
+    :return: Список городов
     """
     pattern = r'(?<="CITY_GROUP",).+?[\]]'
     find = re.search(pattern, response)
@@ -65,6 +70,8 @@ def city_markup(message: Message) -> InlineKeyboardMarkup:
     """
     Функция "city_markup" нужна для:
     1. Формирования клавиатуры с выбором конкретного города.
+    :param message: Сообщение пользователя
+    :return: Клавиатура с городами
     """
     cities = city_founding(message)
     destinations = InlineKeyboardMarkup()
@@ -80,8 +87,10 @@ def get_city_id(call: CallbackQuery) -> None:
     """
     Функция "get_city_id" нужна для:
     1. Получения ID города и записи состояния об этом.
-    2.Если выбрана команда - '/bestdeal', то опрос пользователя о диапазоне цен.
-      Если две другие, то опрос пользователя о дате заезда.
+    2. Обработки дальнейших действий в зависимости от выбранной команды:
+        * Если выбрана команда - '/bestdeal', то опрос пользователя о диапазоне цен.
+        * Если две другие, то опрос пользователя о дате заезда.
+    :param call: Вызов с ID города
     """
     if call.message:
         bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -111,6 +120,7 @@ def get_prices(message: Message) -> None:
     Функция "get_prices" нужна для:
     1. Получения диапазона цен за отель и записи состояния об этом.
     2. Опроса пользователя об максимальной удаленности от центра.
+    :param message: Сообщение пользователя
     """
     try:
         prices = re.split(r'\D', message.text)
@@ -134,6 +144,7 @@ def get_distances(message: Message) -> None:
     """
     Функция "get_distances" нужна для:
     1. Получения максимальной удаленности отеля от центра и записи состояния об этом.
+    :param message: Сообщение пользователя
     """
     if message.text.isdigit() and float(message.text) > 0:
         bot.set_state(message.from_user.id, UserInfoState.distance, message.chat.id)
@@ -158,6 +169,9 @@ def get_calendar(is_process=False, callback_data=None, **kwargs) -> WYearTelegra
     """
     Функция "get_calendar" нужна для:
     1. Создания календаря с текущими датами.
+    :param is_process: Флаг процесса выполнения
+    :param callback_data: Информация которая хранится под кнопкой
+    :return: Календарь с текущими датами
     """
     if is_process:
         result, key, step = MyStyleCalendar(calendar_id=kwargs['calendar_id'],
@@ -182,6 +196,7 @@ def get_check_in(call: CallbackQuery) -> None:
     1. Отправке пользователю клавиатуры с датами заезда
     2. Записи в состояния дату заезда.
     3. Опроса пользователя о дате выезда.
+    :param call: Вызов с датой заезда
     """
     today = datetime.date.today()
     result, key, step = get_calendar(calendar_id=1,
@@ -226,6 +241,7 @@ def get_check_out(call: CallbackQuery) -> None:
     1. Отправке пользователю клавиатуры с датами выезда.
     2. Записи в состояния дату выезда.
     3. Опроса пользователя о кол-во отелей, которое нужно вывести.
+    :param call: Вызов с датой выезда
     """
     with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
         result, key, step = get_calendar(calendar_id=2,
@@ -259,6 +275,7 @@ def get_hotels_amt(message: Message) -> None:
     Функция "get_hotels_amt" нужна для:
     1. Записи в состояния кол-во отелей.
     2. Опроса пользователя о необходимости загрузки фотографий отеля.
+    :param message: Сообщение пользователя
     """
     if message.text.isdigit() and 0 < int(message.text) <= 10:
         bot.send_message(message.from_user.id, text='Необходима ли загрузка фото?\n'
@@ -278,6 +295,7 @@ def need_photo(message: Message) -> None:
     1. Обработки режима просмотра фотографий:
         * Если пользователь ответил - 'да', то функция записывает состояние и запрашивает кол-во этих фотографий.
         * Если пользователь ответил - 'нет', то функция записывает состояние и начинает вывод отелей.
+    :param message: Сообщение пользователя
     """
     if message.text.lower() == 'да':
         bot.send_message(message.from_user.id, text='Хорошо, какое кол-во фото отеля нужно вывести\n'
@@ -302,6 +320,7 @@ def get_photos_amt(message: Message) -> None:
     """
     Функция "get_photos_amt" нужна для:
     1. Получения кол-ва фотографий отеля от пользователя и записи их в состояния.
+    :param message: Сообщение пользователя
     """
     if message.text.isdigit() and 0 < int(message.text) <= 5:
         bot.set_state(message.from_user.id, UserInfoState.photos_amt, message.chat.id)
@@ -319,6 +338,7 @@ def print_hotels(message: Message) -> None:
     Функция "print_hotels" нужна для:
     1. Вывода информации и фото (при необходимости) отеля.
     2. Записи информации о пользователе и отеле в БД.
+    :param message: Сообщение пользователя
     """
     parse_list = api.get_hotels_list(message)
     hotels = api.process_hotels_list(parse_list, message)
@@ -361,6 +381,7 @@ def start(message: Message) -> None:
     2. Запись в состояния время выбранной команды.
     3. Начинает опрос пользователя.
     4. Создание поля в БД.
+    :param message: Сообщение пользователя
     """
     bot.set_state(message.from_user.id, UserInfoState.commands, message.chat.id)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
@@ -384,7 +405,7 @@ def get_city_name(message: Message) -> None:
     """
     Функция "get_city_name" нужна для:
     1. Обработки города пользователя: если город найден в API, то функция отправляет клавиатуру для уточнения города.
-    В ином случае функция запрашивает название еще раз.
+    :param message: Сообщение пользователя
     """
     user_city = message.text
     url = "https://hotels4.p.rapidapi.com/locations/v2/search"

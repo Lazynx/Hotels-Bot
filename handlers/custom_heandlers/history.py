@@ -9,6 +9,7 @@ from telebot.types import Message
 def print_history(message: Message) -> None:
     """
     Функция "print_history" формирует и выводит историю пользователя.
+    :param message: Сообщение пользователя
     """
     req_list = db.get_info_from_db(message.from_user.id)
     logger.info('История получена из БД.')
